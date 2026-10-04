@@ -1,0 +1,85 @@
+# 公共配置。与环境相关的差异放 application-<profile>.yml。
+# 目前只有 dev 一份（application-dev.yml）；将来上线再加 application-prod.yml。
+
+server:
+  # 8080 留给 Steam（steamwebhelper 固定占用它）；
+  # 8090 也不行 —— 它落在 Windows 保留端口范围 8081-8180 内，系统不允许绑定。
+  # 18090 同时避开了保留范围与动态端口范围（1024-15000）。详见 README §18.8
+  port: 18090
+  address: 127.0.0.1   # 只监听本机回环：写作后台不该对局域网暴露
+
+spring:
+  application:
+    name: weblog-backend
+
+  profiles:
+    active: dev
+
+  jpa:
+    # 关闭 OSIV。默认开启时，Hibernate 会在整个请求（含视图渲染）期间持有连接，
+    # 纯 JSON 接口下只是白占连接池。
+    open-in-view: false
+    hibernate:
+      # 表结构由 Flyway 负责，Hibernate 只校验实体与表是否一致，不做任何 DDL。
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  servlet:
+    multipart:
+      max-file-size: 10MB      # 单张图片上限
+      max-request-size: 40MB   # 一次请求总量（一篇带多图时）
+
+  jackson:
+    # 不显式指定时区的话，同一个 DATETIME 在不同机器上会序列化成不同的时刻，
+    # 而且这种偏差是静默的。全部按东八区处理。
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      # 不对外暴露数据库、磁盘等细节
+      show-details: never
+
+app:
+  python:
+    base-url: http://127.0.0.1:8000
+
+  site:
+    base-url: https://fa11leaf.github.io
+
+  # 后台账号。密码刻意【不给默认值】——凭据没有合理的默认值。
+  # 缺失时由 AdminSeeder 提示并按「本机开发」处理，绝不静默使用人人皆知的弱口令。
+  admin:
+    username: ${ADMIN_USERNAME:admin}
+    password: ${ADMIN_PASSWORD:}
+    display-name: ${ADMIN_DISPLAY_NAME:Fa11Leaf}
+    token-ttl-hours: ${ADMIN_TOKEN_TTL_HOURS:72}
+
+  # 发布目标：公开站点所在的仓库。token 能写你的仓库，是最高敏感项，绝不设默认值。
+  github:
+    owner: ${GITHUB_OWNER:Fa11Leaf}
+    repo: ${GITHUB_REPO:Fa11Leaf.github.io}
+    branch: ${GITHUB_BRANCH:main}
+    token: ${GITHUB_TOKEN:}
+    posts-path: ${GITHUB_POSTS_PATH:content/posts}
+    images-path: ${GITHUB_IMAGES_PATH:public/images}
+    author-name: ${GITHUB_AUTHOR_NAME:Fa11Leaf}
+    author-email: ${GITHUB_AUTHOR_EMAIL:}
+
+  # 图片在本机的落脚点。刻意不用系统临时目录：重启后还要能发布，
+  # 而发布时正是从这里读文件、算 blob 的。
+  media:
+    local-dir: ${MEDIA_DIR:data/media}
+    # 超过这个宽度的图片会被等比缩到该宽度以内，避免把手机原图直接发到线上
+    max-width: ${MEDIA_MAX_WIDTH:1600}

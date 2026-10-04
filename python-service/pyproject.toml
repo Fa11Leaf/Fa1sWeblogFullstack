@@ -1,0 +1,15 @@
+# 这里只放工具配置，不放项目依赖。
+# 依赖的唯一来源是 requirements.txt —— 两处都写会造成"改了这里忘了那里"。
+# 若将来要打包成可分发库，再把 [project] 段落挪进来并改用 pip install -e .
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]

@@ -1,0 +1,29 @@
+# Python 能力服务的依赖清单。
+#
+# 版本均为 2026-10-04 核实的 PyPI 最新版。
+# P0 实际只用到 fastapi / uvicorn / pydantic / httpx / pytest，
+# 其余是 P1 的 Markdown 渲染与图片处理所需的，先一并装上，避免后续反复装环境。
+
+fastapi==0.142.2
+uvicorn[standard]==0.54.0
+pydantic==2.13.5
+python-multipart==0.0.32
+
+# P1：Markdown 渲染与代码高亮
+markdown-it-py==4.2.0
+mdit-py-plugins==0.6.1
+pymdown-extensions==12.1
+Pygments==2.21.0
+
+# P3：图片压缩、转 WebP、生成缩略图
+Pillow==12.3.0
+
+# P5：中文分词，用于生成静态搜索索引（检索本身在浏览器端做）
+jieba==0.42.1
+
+# P6：RSS 与 sitemap
+feedgen==1.0.0
+
+# 测试与内部调用
+httpx==0.28.1
+pytest==9.1.1

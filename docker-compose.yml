@@ -1,0 +1,77 @@
+# P0 只启用 MySQL。
+#
+# 【本机已装 MySQL 8.0 时不需要这个文件】start.ps1 会先探测 3306，
+# 发现 mysqld 就直接使用它，根本不会走到这里。这个 compose 是给
+# "本机没装 MySQL" 的机器准备的备用方案，见 README §9.1。
+#
+# 三端容器化（python-service / backend）留到后面阶段：开发期用 Docker 跑 Spring Boot
+# 每次改代码都要重建镜像，热重载体验很差，直接用 backend/mvnw.cmd 更快。
+# 需要时把下面的 app profile 打开：
+#   docker compose --profile app up -d
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: weblog-mysql
+    restart: unless-stopped
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: weblog
+      MYSQL_USER: weblog
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Asia/Shanghai
+
+    # 必须显式指定 utf8mb4：一旦落到 latin1，中文会在写入时静默变成问号。
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+
+    # 前面的 127.0.0.1: 是关键。去掉它 Docker 会监听 0.0.0.0，把数据库暴露到局域网。
+    ports:
+      - "127.0.0.1:3306:3306"
+
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # ── 以下两个服务默认不启动（profile: app）────────────────────────
+  # 需要 Dockerfile，尚未编写，见 README §9.6。
+
+  python-service:
+    profiles: ["app"]
+    build: ./python-service
+    container_name: weblog-python
+    restart: unless-stopped
+    environment:
+      PY_INTERNAL_TOKEN: ${PY_INTERNAL_TOKEN}
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  backend:
+    profiles: ["app"]
+    build: ./backend
+    container_name: weblog-backend
+    restart: unless-stopped
+    environment:
+      PY_INTERNAL_TOKEN: ${PY_INTERNAL_TOKEN}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_PROFILES_ACTIVE: dev
+      # 容器之间必须用服务名互访；写 127.0.0.1 在容器内指的是容器自己。
+      APP_PYTHON_BASE_URL: http://python-service:8000
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/weblog?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Shanghai
+    ports:
+      - "127.0.0.1:18090:18090"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql-data:

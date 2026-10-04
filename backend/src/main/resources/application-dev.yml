@@ -1,0 +1,37 @@
+# 本机开发配置。
+#
+# 数据库：使用本机已安装的 MySQL 8.0（不是 Docker）。见 README §18.6。
+#   MYSQL_USERNAME 默认 root；MYSQL_PASSWORD 刻意【不给默认值】——
+#   数据库凭据没有"合理的默认值"，漏配就该立刻启动失败，
+#   而不是用一个猜出来的值去连库、再报一个看不懂的错。
+#   两者都来自项目根目录的 .env（start.cmd 会自动载入）。
+# 唯一绝不能有默认值的另一项是 GITHUB_TOKEN（能写你仓库的凭据），P4 再处理。
+
+spring:
+  datasource:
+    # allowPublicKeyRetrieval=true：本机 MySQL 的认证插件是 caching_sha2_password，
+    #   不开这个在无 SSL 连接时会报 "Public Key Retrieval is not allowed"。
+    # serverTimezone 必须显式写：JDBC 默认时区与服务器不一致时，
+    #   DATETIME 会出现 8 小时偏差，而且是静默的。
+    # characterEncoding=UTF-8：Connector/J 8+ 会自动映射到服务端的 utf8mb4。
+    url: jdbc:mysql://127.0.0.1:3306/weblog?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD}
+    hikari:
+      maximum-pool-size: 5
+      connection-timeout: 5000
+      pool-name: weblog-hikari
+
+# 另外三项凭据同样来自 .env，只是它们【可以】缺省：
+#   ADMIN_PASSWORD 缺省时 AdminSeeder 会提示并生成一次性随机口令（第一次启动看日志拿）
+#   GITHUB_TOKEN   缺省时后台照常写作，只是「发布」按钮会明确报「未配置令牌」
+# 这样 clone 下来就能跑，但绝不会用一个人人都知道的弱口令把后台敞开。
+
+logging:
+  level:
+    com.fa11leaf.blog: DEBUG
+    org.flywaydb: INFO
+
+app:
+  python:
+    internal-token: ${PY_INTERNAL_TOKEN:dev-internal-token}

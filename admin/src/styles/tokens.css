@@ -1,0 +1,341 @@
+/**
+ * 设计令牌：全站唯一的取值来源。
+ *
+ * 沿用公开站点已有的取值（760px 正文宽、1080px 页眉页脚宽、#2563eb 主色），
+ * 保证前后台看起来是同一个站点，而不是两个拼起来的东西。
+ * 组件里不要写魔法数字，一律引用这里的变量。
+ */
+
+:root {
+  --color-bg: #ffffff;
+  --color-bg-subtle: #f7f8fa;
+  --color-text: #1f2937;
+  --color-text-muted: #64748b;
+  --color-border: #e5e7eb;
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-success: #15803d;
+  --color-warn: #b45309;
+  --color-danger: #b91c1c;
+  --color-accent-soft: #eff6ff;
+
+  --max-width-prose: 760px;   /* 正文阅读宽度 */
+  --max-width-shell: 1200px;  /* 后台比公开站点宽：表格与编辑器需要横向空间 */
+  --radius: 10px;
+  --radius-sm: 6px;
+  --space: 20px;
+
+  --font-sans: system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0f172a;
+    --color-bg-subtle: #1e293b;
+    --color-text: #e2e8f0;
+    --color-text-muted: #94a3b8;
+    --color-border: #334155;
+    --color-accent: #60a5fa;
+    --color-accent-hover: #93c5fd;
+    --color-accent-soft: #1e293b;
+    --color-success: #4ade80;
+    --color-warn: #fbbf24;
+    --color-danger: #f87171;
+  }
+}
+
+/* 用户设置了"减少动态效果"时，关掉所有过渡。前庭功能敏感的人会因动画不适。 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── 通用控件 ─────────────────────────────────────────────────────────
+   后台的按钮、输入框样式集中在这里，而不是每个视图各写一套。
+   视图里只写布局，不再重复定义控件外观。 */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 14px;
+  white-space: nowrap;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* 键盘用户依赖可见的焦点轮廓，不能去掉 */
+.btn:focus-visible,
+.input:focus-visible,
+.textarea:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.btn-primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  color: #fff;
+}
+
+.btn-danger:hover:not(:disabled) {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.input,
+.textarea,
+.select {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+  padding: 7px 10px;
+}
+
+.textarea {
+  resize: vertical;
+  line-height: 1.7;
+}
+
+.label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--color-text-muted);
+  font-size: 12.5px;
+}
+
+.field {
+  margin-bottom: 14px;
+}
+
+.card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg-subtle);
+  padding: 18px 20px;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.pill {
+  display: inline-block;
+  padding: 1px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.pill-ok {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.pill-warn {
+  border-color: var(--color-warn);
+  color: var(--color-warn);
+}
+
+.alert {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+  color: var(--color-danger);
+  font-size: 13.5px;
+}
+
+/* ── 预览区排版（.prose）─────────────────────────────────────────────
+   与公开站点保持同样的视觉。刻意不复用公开站点的 CSS 文件：
+   那个文件属于另一个仓库，跨仓库 import 会让两边都无法独立构建。
+   这里的规则只覆盖预览需要的部分。 */
+
+.prose {
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+  margin: 22px 0 10px;
+  line-height: 1.4;
+}
+
+.prose h2 {
+  font-size: 20px;
+}
+
+.prose h3 {
+  font-size: 17px;
+}
+
+.prose p {
+  margin: 0 0 12px;
+}
+
+.prose ul,
+.prose ol {
+  margin: 0 0 12px;
+  padding-left: 1.4em;
+}
+
+.prose blockquote {
+  margin: 14px 0;
+  padding: 4px 14px;
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+}
+
+.prose img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  padding: 1px 5px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  background: var(--color-bg-subtle);
+}
+
+.prose pre {
+  margin: 14px 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.prose pre code {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+.prose table {
+  width: 100%;
+  margin: 14px 0;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.prose th,
+.prose td {
+  padding: 7px 10px;
+  border: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.prose th {
+  background: var(--color-bg-subtle);
+}
+
+/* ── Pygments 高亮子集 ────────────────────────────────────────────────
+   只覆盖最常见的几类 token。用"子集"而不是 Pygments 的完整样式表
+   （约 100 条规则），是因为预览用的深色底与线上站点并不完全一致，
+   与其假装精确，不如只保证关键字、字符串、注释这三类一眼可辨。 */
+
+.prose pre code .k,
+.prose pre code .kd,
+.prose pre code .kn,
+.prose pre code .kc {
+  color: #569cd6;
+}
+
+.prose pre code .s,
+.prose pre code .s1,
+.prose pre code .s2,
+.prose pre code .sb {
+  color: #ce9178;
+}
+
+.prose pre code .c,
+.prose pre code .c1,
+.prose pre code .cm {
+  color: #6a9955;
+  font-style: italic;
+}
+
+.prose pre code .m,
+.prose pre code .mi,
+.prose pre code .mf {
+  color: #b5cea8;
+}
+
+.prose pre code .nf,
+.prose pre code .fm {
+  color: #dcdcaa;
+}
+
+.prose pre code .nc,
+.prose pre code .nn {
+  color: #4ec9b0;
+}
+
+.prose pre code .nt {
+  color: #569cd6;
+}
+
+.prose pre code .na {
+  color: #9cdcfe;
+}
